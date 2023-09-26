@@ -1,4 +1,6 @@
 import numpy as np
+
+
 class Arrays:
     def fill_array(*x: list):
         lengths = [len(i) for i in x]
@@ -9,9 +11,9 @@ class Arrays:
 
         return np.array(x)
 
-
     def probability_next_element_in_channel_by_system(
-        data: np.ndarray, system: list, channel: int, element):
+        data: np.ndarray, system: list, channel: int, element
+    ):
         if len(system) != len(data):
             raise Exception("El system no tiene está completo")
 
@@ -26,18 +28,43 @@ class Arrays:
             system_i = [channel[i] for channel in data]
             if system == system_i:
                 index_equal_system.append(i)
-        ok_next_element = 0
+        ok_next_system = 0
         for i in index_equal_system:
-            next_element_channel = data[channel][i + 1]
+            next_system = data[channel][i + 1]
             if i + 1 >= len(data[0]):  # last element
                 continue
 
-            if next_element_channel == element:
-                ok_next_element += 1
+            if next_system == element:
+                ok_next_system += 1
 
-        return ok_next_element / len(index_equal_system)
+        return ok_next_system / len(index_equal_system)
 
-    def generate_binary_combinations(n:int):
+    def probability_next_system_by_system(
+        data: np.ndarray, system: list, next_system: list
+    ):
+        if len(system) != len(data) or len(next_system) != len(data):
+            raise Exception("Uno de los systemas no están completo")
+
+        # TODO: check if next_system an system is in data
+
+        index_equal_system = []
+        for i in range(len(data[0]) - 1):
+            system_i = [channel[i] for channel in data]
+            if system == system_i:
+                index_equal_system.append(i)
+
+        ok_next_system = 0
+        for i in index_equal_system:
+            real_next_system = [channel[i + 1] for channel in data]
+            if i + 1 >= len(data[0]):  # last element
+                continue
+
+            if real_next_system == next_system:
+                ok_next_system += 1
+
+        return ok_next_system / len(index_equal_system)
+
+    def generate_binary_combinations(n: int):
         # Comprobamos si n es menor que 1
         if n < 1:
             return [[]]
@@ -48,7 +75,7 @@ class Arrays:
 
         # Generamos las combinaciones recursivamente
         smaller_combinations = Arrays.generate_binary_combinations(n - 1)
-        
+
         # Para cada combinación anterior, agregamos 0 y 1 para obtener las nuevas combinaciones
         new_combinations = []
         for combination in smaller_combinations:
