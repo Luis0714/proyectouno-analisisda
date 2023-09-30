@@ -9,15 +9,17 @@ class Graphic:
 
     def graficar():
         # Datos para la tabla
-        data: np.ndarray  = Arrays.fill_array(A, B, C)
+        arr = Arrays()
+        arr.fill_array(A, B, C)
         cell_height = 0.15
-        channels = ['Canal '+Graphic.obtener_letra_por_numero(i+1) for i in range(len(data))]
+        channels = ['Canal '+Graphic.obtener_letra_por_numero(i+1) for i in range(len(arr.array_channels))]
         headers =  ['A','B','C' ]+channels
         # dats = Logic.probability_system_and_channels(data)
         # Datos para la primera tabla
 
         # Datos de ejemplo en la lista response
-        response = Logic.probability_system_and_channels(data)
+        response = Logic.probability_system_and_channels(arr)
+    
         # response[0][0] = str(response[0][0])
 
         cell_height = 0.1
@@ -27,7 +29,6 @@ class Graphic:
 
         for i, table_data in enumerate(response):
             df = pd.DataFrame(table_data, columns=headers)
-
             # Mostrar la tabla en el subplot actual con cellLoc y cellLoc table personalizados
             axs[i].axis('off')  # Eliminar ejes
             tabla = axs[i].table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center')
@@ -44,8 +45,7 @@ class Graphic:
         plt.show()
                                         
 
-        
-                        
+                           
     def obtener_letra_por_numero(numero):
         if 1 <= numero <= 26:
             # Asumiendo que el número 1 corresponde a 'A', el número 2 a 'B' y así sucesivamente.
