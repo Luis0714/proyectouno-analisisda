@@ -4,9 +4,7 @@ from channels import A,  B, C
 from arrays import Arrays
 
 arr = Arrays()
-arr.fill_array(1,A,B, C)
-
-
+arr.fill_array("❶", A,B, C)
 
 Graphic.graficar(arr.EstadoCanalF, "Estado Canal F")
 Graphic.graficar(arr.EstadoEstadoF, "Estado Estado F")
