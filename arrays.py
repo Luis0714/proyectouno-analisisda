@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 
 class Arrays:
@@ -9,6 +10,7 @@ class Arrays:
     EstadoEstadoP: np.ndarray
     combos: list
     elements: list
+    element: any
 
     def __init__(self):
         array_channels = []
@@ -16,7 +18,7 @@ class Arrays:
         self.elements = []
         EstadoCanalF, EstadoEstadoF, EstadoCanalP, EstadoEstadoP = [], [], [], []
 
-    def fill_array(self, *x: list) -> np.ndarray:
+    def fill_array(self, element, *x: list) -> np.ndarray:
         lengths = [len(i) for i in x]
         equals_lengths = all([i == lengths[0] for i in lengths])
 
@@ -26,6 +28,11 @@ class Arrays:
         self.array_channels = np.array(x)
         self.elements = list(set(self.array_channels.flatten()))
         self.combos = self._generate_combos()
+        self.element = element
+        self.fill_EstadoCanalF()
+        self.fill_EstadoEstadoF()
+        self.fill_EstadoCanalP()
+        self.fill_EstadoEstadoP()
         return self.array_channels
 
     # for EstadoCanalF 
@@ -161,5 +168,88 @@ class Arrays:
 
         return new_combinations
         
+    def obtener_letra_por_numero(self,numero):
+            if 1 <= numero <= 26:
+                # Asumiendo que el número 1 corresponde a 'A', el número 2 a 'B' y así sucesivamente.
+                letra = chr(ord('A') + numero - 1)
+                return letra
+            else:
+                return "Número fuera de rango"
+
     def fill_EstadoCanalF(self):
-        pass
+        countChannels = len(self.array_channels)
+        channelsString = ['Canal '+self.obtener_letra_por_numero(i+1)+"\n"+str(self.element) for i in range(countChannels)]
+        systemString = [self.obtener_letra_por_numero(i+1) for i in range(countChannels)]
+        headers = systemString + channelsString
+        systems = self.combos
+        channels = [i for i in range(countChannels)]
+        response = []
+        lista = []
+        lista.append(headers)
+        for system in systems:
+            probability_list = [i for i in system]
+            system_list = [i for i in system]
+            for channel in channels:
+                probability = self.probability_next_element_in_channel_by_system(
+                    system=system_list, channel=channel, element=self.element
+                )
+                porcentage = str(round((probability * 100), 2)) + "%"
+                probability_list.append(porcentage)
+            lista.append(probability_list)
+            probability_list = []
+        self.EstadoCanalF = lista
+
+    def fill_EstadoEstadoF(self):
+        countChannels = len(self.array_channels)
+        channelsString = [''.join(map(str, i)) for i in self.combos]
+        comboString = [self.obtener_letra_por_numero(i+1) for i in range(countChannels)]
+        headers = comboString + channelsString
+        combos = self.combos
+        channels = [i for i in range(countChannels)]
+        lista = []
+        lista.append(headers)
+        for combo in combos:
+            probability_list = copy.copy(combo)
+            for next_combo in combos:
+                probability = self.probability_next_system_by_system(system=combo, next_system=next_combo)
+                porcentage = str(round((probability * 100), 2)) + "%"
+                probability_list.append(porcentage)
+            lista.append(probability_list)
+            probability_list = []
+        self.EstadoEstadoF = lista
+
+    def fill_EstadoCanalP(self):
+        countChannels = len(self.array_channels)
+        channelsString = [''.join(map(str, i)) for i in self.combos]
+        headers = ["-"] + channelsString
+        combos = self.combos
+        channels = [i for i in range(countChannels)]
+        lista = []
+        lista.append(headers)
+        for i in range(countChannels):
+            probability_list = ['Canal '+self.obtener_letra_por_numero(i+1)+" ("+str(self.element)+")"]
+            for next_combo in combos:
+                probability = self.probability_next_system_by_elemetn_channel(origin_channel = i, element = self.element, next_system=next_combo)
+                porcentage = str(round((probability * 100), 2)) + "%"
+                probability_list.append(porcentage)
+            lista.append(probability_list)
+            probability_list = []
+        self.EstadoCanalP = lista
+
+    def fill_EstadoEstadoP(self):
+        countChannels = len(self.array_channels)
+        channelsString = ['Canal '+self.obtener_letra_por_numero(i+1)+"\n"+str(self.element) for i in range(countChannels)]
+        headers = ["-"] + channelsString
+        combos = self.combos
+        channels = [i for i in range(countChannels)]
+        lista = []
+        lista.append(headers)
+        for i in range(countChannels):
+            probability_list = ['Canal '+self.obtener_letra_por_numero(i+1)+" ("+str(self.element)+")"]
+            for j in range(countChannels):
+                probability = self.probability_next_element_in_channel_by_element_channel(origin_channel=i, origin_element=self.element, next_channel=j, next_element=self.element)
+                porcentage = str(round((probability * 100), 2)) + "%"
+                probability_list.append(porcentage)
+            lista.append(probability_list)
+            probability_list = []
+        self.EstadoEstadoP = lista
