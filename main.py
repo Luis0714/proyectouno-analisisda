@@ -16,11 +16,24 @@ arr.fill_array(1, A,B, C)
 # Graphic.graficar(arr.initial_table_for_taller3, "initial table")
 
 
-mar_col, mar_row  = arr.marginalize_next_systems(
-                initial_state=(0, 0, None),
-                next_state=(0, None, None)
+# mar_col  = arr.marginalize_next_state(
+#                 current_state=(0, 0, None),
+#                 next_state=(2, 2, None)
+#             )
+
+mar_row  = arr.marginalize_one_current_state(
+                table=mar_col,
+                current_state=(0, 0, None),
+                next_state=(2, None, None)
             )
-print(mar_col, '\n\n\n',mar_row)
+
+mar_row2  = arr.marginalize_one_current_state(
+                table=mar_col,
+                current_state=(0, 0, None),
+                next_state=(None, 2, None)
+            )
+
+print(mar_col, '\n\n\n', mar_row, '\n\n\n', mar_row2)
 
 
 print('duration: ', time.time() - start, ' seconds')
