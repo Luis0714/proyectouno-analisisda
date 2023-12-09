@@ -1,13 +1,14 @@
 
 from graphic import Graphic
-from channels2 import A,  B, C
+from channels2 import A, B, C
 from arrays import Arrays
 import time
 import numpy as np
 
 start = time.time()
 arr = Arrays()
-arr.fill_array(1, A,B, C)
+arr.fill_array(1, A, B, C)
+arr.fill_initial_table_for_taller3()
 
 # Graphic.graficar(arr.EstadoCanalF, "Estado Canal F")
 # Graphic.graficar(arr.EstadoEstadoF, "Estado Estado F")
@@ -38,7 +39,6 @@ arr.fill_array(1, A,B, C)
 # print('\n\n\n', pro)
 
 print('duration: ', time.time() - start, ' seconds')
-print("(C | A = 1):\n",arr.get_probabiliti_distribution(current_state=(1, None, None),
-                next_state=(None, None, True)))
-
-    
+print("(C | A = 1):\n",arr.get_probability_distribution(
+                current_state=(None, 0, None),
+                next_state=(True, None, True)))

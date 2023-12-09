@@ -8,6 +8,7 @@ class Arrays:
     EstadoEstadoF: np.ndarray
     EstadoCanalP: np.ndarray
     EstadoEstadoP: np.ndarray
+    probability_next_system_by_system: np.ndarray
     combos: list
     elements: list
     element: any
@@ -33,7 +34,7 @@ class Arrays:
         # self.fill_EstadoEstadoF()
         # self.fill_EstadoCanalP()
         # self.fill_EstadoEstadoP()
-        self.fill_initial_table_for_taller3()
+        # self.fill_initial_table_for_taller3()
         return self.array_channels
 
     # for EstadoCanalF 
@@ -256,122 +257,108 @@ class Arrays:
             probability_row = []
         self.initial_table_for_taller3 = np.array(result)
         
-    def marginalize_next_state(self, current_state:tuple[int], next_state:tuple[int]):
-        table = self.initial_table_for_taller3.copy()
-        quit_channels_col = [i for i in range(len(next_state)) if next_state[i] is None]
+    def marginalized_columns(self, current_state:tuple[int], next_state:tuple[int]):
+        initial_table = self.initial_table_for_taller3.copy()
+        channel_index_delete_to_column = [i for i in range(len(next_state)) if next_state[i] is None]
+        num_channels_marginalized_to_row = current_state.count(None)
 
-        # next_state obtenemos los combos resultantes de quitar los canales
-        new_combos_col = []
+        marginalized_combos = []
+        columns_index_to_groupsum = {}
+        new_table = None
+        solution_row=None
+
         for combo in self.combos:
             new_combo = []
             for i in range(len(combo)):
-                if i not in quit_channels_col:
+                if i not in channel_index_delete_to_column:
                     new_combo.append(combo[i])
-            new_combos_col.append(new_combo)                
-
-        # next_state obtenemos los índices de los combos repetidos        
-        indice_elemento = {}
-        for indice, elemento in enumerate(new_combos_col):
-            if str(elemento) in indice_elemento:
-                indice_elemento[str(elemento)].append(indice)
+            marginalized_combos.append(new_combo)                
+      
+        for i, m_combo in enumerate(marginalized_combos):
+            if str(m_combo) in columns_index_to_groupsum:
+                columns_index_to_groupsum[str(m_combo)].append(i)
             else:
-                indice_elemento[str(elemento)] = [indice]
-        
-        # next_state sumamos las probabilidades de los combos repetidos
-        new_table = None
-        for key in indice_elemento:
-            acc = np.zeros(len(table[:,0]))
+                columns_index_to_groupsum[str(m_combo)] = [i]
+       
+        for combo_key in columns_index_to_groupsum:
+            acc_column = np.zeros(len(initial_table[0]))
                 
-            for indice in indice_elemento[key]:
-                acc = acc + table[:,indice]
+            for i_column in columns_index_to_groupsum[combo_key]:
+                acc_column = acc_column + initial_table[:,i_column]
                 
             if new_table is None:
-                new_table = acc
+                new_table = acc_column
             else:
-                new_table = np.c_[new_table, acc]       
-        
-        solution_row=None
-        num_marginalize_current_state = current_state.count(None)
-        if num_marginalize_current_state == 0:
-            index_solution = self.combos.index(list(current_state))
-            solution_row = new_table[index_solution, :]
+                new_table = np.c_[new_table, acc_column]       
+           
+        if num_channels_marginalized_to_row == 0:
+            index_row_sol = self.combos.index(list(current_state))
+            solution_row = new_table[index_row_sol]
         
         return new_table, solution_row
     
-    def marginalize_one_current_state(self, current_state:tuple[int], next_state:tuple[int]):
-        """current_state must be contains two None"""
-        
-        #? next_state contains two None
-        new_table, _ = self.marginalize_next_state(current_state, next_state)
-        
-        #! curret_state
-        quit_channels_row = [i for i in range(len(current_state)) if current_state[i] is None]
-        current_state = [i for i in current_state if i is not None]
+    def get_individual_solution_apply_formula(self, current_state:tuple[int], next_state:tuple[int]):
+        """current_state must be contains one only not None"""
 
-        
-        # current_state obtenemos los combos resultantes de quitar los canales
-        new_combos_row = []
+        new_table, _ = self.marginalized_columns(current_state, next_state)
+        channel_index_delete_to_row = [i for i in range(len(current_state)) if current_state[i] is None]
+        current_state_str = str([i for i in current_state if i is not None])
+        marginalized_combos = []
+        rows_index_to_groupsum = {}
+        result_table = None
+
         for combo in self.combos:
             new_combo = []
             for i in range(len(combo)):
-                if i not in quit_channels_row:
+                if i not in channel_index_delete_to_row:
                     new_combo.append(combo[i])
-            new_combos_row.append(new_combo) 
-    
-            
-        # current_state obtenemos los índices de los combos repetidos 
-        indice_elemento_row = {}
-        for indice, elemento in enumerate(new_combos_row):
-            if str(elemento) in indice_elemento_row:
-                indice_elemento_row[str(elemento)].append(indice)
+            marginalized_combos.append(new_combo) 
+                
+        for i, combo in enumerate(marginalized_combos):
+            if str(combo) in rows_index_to_groupsum:
+                rows_index_to_groupsum[str(combo)].append(i)
             else:
-                indice_elemento_row[str(elemento)] = [indice]
+                rows_index_to_groupsum[str(combo)] = [i]
 
-        
-        # current_state sumamos las probabilidades de los combos repetidos y dividimos entre 2
-        # ! use la fórmula (depronto recusrión)
-        result_table = None
-        for key in indice_elemento_row:
-            if key != str(current_state): continue
+        for combo_key in rows_index_to_groupsum:
+            if combo_key != current_state_str: continue
             
-            acc = np.zeros(len(new_table[0]))
-            acc_init = False
-            for indice in indice_elemento_row[key]:
-                if not acc_init:
-                    acc = acc + new_table[indice, :]
-                    acc_init = True
+            acc_row = None
+            for indice in rows_index_to_groupsum[combo_key]:
+                if acc_row is None:
+                    acc_row = new_table[indice]
                 else:
-                    acc = (acc + new_table[indice, :]) /2
-
+                    acc_row = (acc_row + new_table[indice]) /2
                 
             if result_table is None:
-                result_table = acc   
+                result_table = acc_row   
             else:
-                result_table = np.vstack((result_table, acc))    
+                result_table = np.vstack((result_table, acc_row))    
                 
         return  result_table
     
-    def get_probabiliti_distribution(self, current_state:tuple[int], next_state:tuple[int]):
-        _, solution_no_marginalize_current_state = self.marginalize_next_state(current_state, next_state)
-        num_marginalize_current_state = current_state.count(None)
-        
-        if num_marginalize_current_state == 0:
-            return solution_no_marginalize_current_state
-        
-        positions_not_none = [i for i, valor in enumerate(next_state) if valor is not None]
-        next_states_combos = []
-        for i in positions_not_none:
+    def get_probability_distribution(self, current_state:tuple[int], next_state:tuple[int]):
+        num_channels_marginalized_to_row = current_state.count(None)
+        channel_index_no_delete_to_row = [i for i, val in enumerate(next_state) if val is not None]
+        next_states_apply_formula = []
+        idividual_solutions = []
+        solution = None
+        individual_sol = None
+
+        if num_channels_marginalized_to_row == 0:
+            _, solution_no_marginalize_row = self.marginalized_columns(current_state, next_state)
+            return solution_no_marginalize_row
+
+        for i in channel_index_no_delete_to_row:
             next_state_aux = [None]*len(next_state)
             next_state_aux[i] = True
             
-            next_states_combos.append(tuple(next_state_aux))
+            next_states_apply_formula.append(tuple(next_state_aux))
             
-        idividual_solutions = []
-        for next_state_aux in next_states_combos:
-            individual_sol = self.marginalize_one_current_state(current_state, next_state_aux)
+        for next_state_aux in next_states_apply_formula:
+            individual_sol = self.get_individual_solution_apply_formula(current_state, next_state_aux)
             idividual_solutions.append(individual_sol)
             
-        solution = None
         for individual_sol in idividual_solutions:
             if solution is None:
                 solution = individual_sol
