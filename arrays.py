@@ -43,7 +43,7 @@ class Arrays:
         if len(system) != len(self.array_channels):
             raise Exception("El system no tiene está completo")
 
-        if not element in self.array_channels.flatten():
+        if not element in self.elements:
             raise Exception("element no válido")
 
         if not channel in range(len(self.array_channels)):
@@ -172,19 +172,17 @@ class Arrays:
         headers = systemString + channels_string
         systems = self.combos
         channels = [i for i in range(count_channels)]
-        response = []
         lista = []
-        # lista.append(headers)
+        lista.append(headers)
         for system in systems:
             
-            # probability_list = [i for i in system]
-            probability_list = []
+            probability_list = [i for i in system]
             system_list = [i for i in system]
             for channel in channels:
                 probability = self.probability_next_element_in_channel_by_system(
                     system=system_list, channel=channel, element=self.element
                 )
-                porcentage = probability
+                porcentage = str(round((probability * 100), 2)) + "%"
                 probability_list.append(porcentage)
             lista.append(probability_list)
             probability_list = []
