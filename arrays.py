@@ -257,28 +257,35 @@ class Arrays:
             probability_row = []
         self.initial_table_for_taller3 = np.array(result)
         
-    def marginalized_columns(self, current_state:tuple[int], next_state:tuple[int]):
-        initial_table = self.initial_table_for_taller3.copy()
-        channel_index_delete_to_column = [i for i in range(len(next_state)) if next_state[i] is None]
-        num_channels_marginalized_to_row = current_state.count(None)
-
+    def _marginalize_combos(self, state:tuple[int]):
+        channel_index_delete = [i for i in range(len(state)) if state[i] is None]
         marginalized_combos = []
-        columns_index_to_groupsum = {}
-        new_table = None
-        solution_row=None
-
         for combo in self.combos:
             new_combo = []
             for i in range(len(combo)):
-                if i not in channel_index_delete_to_column:
+                if i not in channel_index_delete:
                     new_combo.append(combo[i])
-            marginalized_combos.append(new_combo)                
-      
-        for i, m_combo in enumerate(marginalized_combos):
-            if str(m_combo) in columns_index_to_groupsum:
-                columns_index_to_groupsum[str(m_combo)].append(i)
+            marginalized_combos.append(new_combo)    
+        return marginalized_combos
+
+    def _group_equals_combos_in_dict(self, combos):
+        combos_dict = {}
+        for i, combo in enumerate(combos):
+            if str(combo) in combos_dict:
+                combos_dict[str(combo)].append(i)
             else:
-                columns_index_to_groupsum[str(m_combo)] = [i]
+                combos_dict[str(combo)] = [i]
+        return combos_dict
+
+    def marginalized_columns(self, current_state:tuple[int], next_state:tuple[int]):
+        initial_table = self.initial_table_for_taller3.copy()
+        num_channels_marginalized_to_row = current_state.count(None)
+
+        new_table = None
+        solution_row=None
+
+        marginalized_combos = self._marginalize_combos(state=next_state)               
+        columns_index_to_groupsum = self._group_equals_combos_in_dict(marginalized_combos)
        
         for combo_key in columns_index_to_groupsum:
             acc_column = np.zeros(len(initial_table[0]))
@@ -301,24 +308,12 @@ class Arrays:
         """current_state must be contains one only not None"""
 
         new_table, _ = self.marginalized_columns(current_state, next_state)
-        channel_index_delete_to_row = [i for i in range(len(current_state)) if current_state[i] is None]
         current_state_str = str([i for i in current_state if i is not None])
-        marginalized_combos = []
-        rows_index_to_groupsum = {}
+
         result_table = None
 
-        for combo in self.combos:
-            new_combo = []
-            for i in range(len(combo)):
-                if i not in channel_index_delete_to_row:
-                    new_combo.append(combo[i])
-            marginalized_combos.append(new_combo) 
-                
-        for i, combo in enumerate(marginalized_combos):
-            if str(combo) in rows_index_to_groupsum:
-                rows_index_to_groupsum[str(combo)].append(i)
-            else:
-                rows_index_to_groupsum[str(combo)] = [i]
+        marginalized_combos = self._marginalize_combos(state=current_state)
+        rows_index_to_groupsum = self._group_equals_combos_in_dict(marginalized_combos)
 
         for combo_key in rows_index_to_groupsum:
             if combo_key != current_state_str: continue
